@@ -16,7 +16,7 @@ use crate::state::{Config, CONFIG, FUNDS};
 
 // CW2
 use cw2::set_contract_version;
-const CONTRACT_NAME: &str = "crates.io:yield-optimizer";
+const CONTRACT_NAME: &str = "crates.io:yield-aggregator";
 const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
 
 // LOGIC
