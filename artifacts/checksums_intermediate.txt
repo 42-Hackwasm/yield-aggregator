@@ -1,1 +1,1 @@
-d0899a6083c90ef57415c159cbb0adceb8b58ce6fe636bd6e8fce03c3841a404  ./target/wasm32-unknown-unknown/release/yield_optimizer.wasm
+85f10b6c07584b34a9ea171d95126c408502bb1d18b4a57c50ec24546b0c7af2  ./target/wasm32-unknown-unknown/release/yield_optimizer.wasm

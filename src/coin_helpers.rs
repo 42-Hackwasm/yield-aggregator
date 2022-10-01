@@ -37,6 +37,17 @@ fn convert_vector_of_string_slices_to_string(vector: Vec<String>) -> String {
     string
 }
 
+pub fn convert_coins_vec_to_string(coins: Vec<Coin>) -> String {
+    let mut string = String::new();
+    for coin in coins {
+        string.push_str(&coin.amount.u128().to_string());
+        string.push_str(" ");
+        string.push_str(&coin.denom);
+        string.push_str(", ");
+    }
+    string
+}
+
 
 // You send enough OR MORE coins with the correct denom(s)
 // https://github.com/InterWasm/cw-contracts/blob/main/contracts/nameservice/src/coin_helpers.rs

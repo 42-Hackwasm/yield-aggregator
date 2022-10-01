@@ -1,8 +1,9 @@
 #[cfg(not(feature = "library"))]
 // COSMWASM
 use cosmwasm_std::entry_point;
-use cosmwasm_std::{Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult, to_binary, StdError};
+use cosmwasm_std::{Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult, to_binary, StdError, BankMsg, Coin};
 
+use crate::coin_helpers::{convert_coins_vec_to_string};
 // ERRORS & MESSAGES
 use crate::error::ContractError;
 use crate::msg::{ExecuteMsg, InstantiateMsg, QueryMsg, MigrateMsg};
@@ -57,19 +58,8 @@ pub fn execute( deps: DepsMut, _env: Env, info: MessageInfo, msg: ExecuteMsg) ->
                 return Err(ContractError::NoFundsSend{});
             }
 
-            // // if users_funds is empty, save blank funds to storage
-            // if users_funds.is_none() {
-            //     let funds = Funds { funds: vec![] };
-            //     FUNDS.save(deps.storage, address.clone(), &funds)?;
-            // }
-                    
-            // let mut funds = users_funds.unwrap();
-            // funds.funds.append(&mut info.funds.clone());
-            // FUNDS.save(deps.storage, address.clone(), &funds)?;
-
             // load FUNDS from stroage, if none, create new Funds & save. Or else just append funds to existing Funds
-            let mut funds = FUNDS.may_load(deps.storage, address.clone())?.unwrap_or_else(|| Funds { funds: vec![] });
-            // funds.funds.append(&mut info.funds.clone());
+            let mut funds = FUNDS.may_load(deps.storage, address.clone())?.unwrap_or_else(|| Funds { funds: vec![] });            
 
             // loop through funds.funds & add coins if they are the same denom
             for coin in info.funds.clone() {
@@ -99,6 +89,48 @@ pub fn execute( deps: DepsMut, _env: Env, info: MessageInfo, msg: ExecuteMsg) ->
                 .add_attribute("new_funds", new_funds)
             )
         },
+
+        ExecuteMsg::WithdrawFunds { denom, amount } => {
+            let address = info.sender.to_string();
+            let funds = FUNDS.may_load(deps.storage, address.clone())?;
+
+            // check if funds is none
+            if funds.is_none() {
+                return Err(ContractError::NoFundsInContract{});
+            } else {
+                // loop through funds.funds & subtract coins if they are the same denom
+                let mut funds: Funds = funds.unwrap();
+                for coin in funds.funds.clone() {
+                    if coin.denom == denom {
+                        if coin.amount < amount {
+                            return Err(ContractError::NotEnoughFunds{ denom: denom, amount: amount.to_string() });
+                        } else {
+                            funds.funds.retain(|c| c.denom != denom);
+                            if coin.amount > amount {
+                                // funds.funds.push(Coin { denom: denom.clone(), amount: coin.amount - amount });                                                            
+                                let idx = funds.funds.iter().position(|c| c.denom == denom);
+
+                                if let Some(idx) = idx {
+                                    funds.funds[idx].amount -= amount;
+                                }
+                            }
+                        }
+                    }
+                }
+                FUNDS.save(deps.storage, address.clone(), &funds)?;          
+            }
+
+
+            let bank_msg = BankMsg::Send {
+                to_address: address.clone(),
+                amount: vec![Coin { denom: denom.clone(), amount: amount }],
+            };
+
+            Ok(Response::new()
+                .add_attribute("action", "withdraw_funds")                
+                .add_message(bank_msg)                
+            )
+        },
     }
 }
 
@@ -113,7 +145,7 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
 
 
 
-#[entry_point]
+#[cfg_attr(not(feature = "library"), entry_point)]
 pub fn migrate(deps: DepsMut, _env: Env, _msg: MigrateMsg) -> Result<Response, ContractError> {
     // https://docs.cosmwasm.com/docs/1.0/smart-contracts/migration/
     let ver = cw2::get_contract_version(deps.storage)?;
