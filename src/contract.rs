@@ -141,10 +141,7 @@ pub fn execute( deps: DepsMut, env: Env, info: MessageInfo, msg: ExecuteMsg) -> 
             
             let ibc_timeout_block = IbcTimeout::with_block(IbcTimeoutBlock { height: env.block.height + 1000, revision: 0});
 
-            // TODO: how to send tokens & some binary message for what we want to do on the other side once OPEN?
-            // ICA, IBC direct binary?
-
-
+            // TODO: we should instead somehow use ICA, need to find documentation on ICA
 
             // transfer via an IBC channel
             let ibc_msg = IbcMsg::Transfer {
@@ -166,7 +163,7 @@ pub fn execute( deps: DepsMut, env: Env, info: MessageInfo, msg: ExecuteMsg) -> 
             };
 
             let ibc_submsg: SubMsg<_> = SubMsg::new(ibc_msg);
-            let ibc_submsg_2: SubMsg<_> = SubMsg::new(ibc_msg_2);
+            let ibc_submsg_2: SubMsg<_> = SubMsg::new(ibc_msg_2);            
 
 
             Ok(Response::new()
