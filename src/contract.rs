@@ -12,7 +12,7 @@ use crate::queries;
 // execute
 
 // STATE
-use crate::state::{Config, CONFIG, FUNDS};
+use crate::state::{Config, CONFIG, FUNDS, Funds};
 
 // CW2
 use cw2::set_contract_version;
@@ -50,15 +50,28 @@ pub fn execute( deps: DepsMut, _env: Env, info: MessageInfo, msg: ExecuteMsg) ->
     match msg {
         ExecuteMsg::AddFunds {} => {
             let address = info.sender.to_string();
-            let users_funds = FUNDS.may_load(deps.storage, address.clone())?;       
+            // let users_funds = FUNDS.may_load(deps.storage, address.clone())?;       
             
-            if users_funds.is_none() {
-                return Err(ContractError::NoFundsSend {});
-            } else {
-                let mut funds = users_funds.unwrap();
-                funds.funds.append(&mut info.funds.clone());
-                FUNDS.save(deps.storage, address.clone(), &funds)?;
-            }                
+            // check if info.funds.clone() is empty
+            if info.funds.clone().is_empty() {
+                return Err(ContractError::NoFundsSend{});
+            }
+
+            // // if users_funds is empty, save blank funds to storage
+            // if users_funds.is_none() {
+            //     let funds = Funds { funds: vec![] };
+            //     FUNDS.save(deps.storage, address.clone(), &funds)?;
+            // }
+                    
+            // let mut funds = users_funds.unwrap();
+            // funds.funds.append(&mut info.funds.clone());
+            // FUNDS.save(deps.storage, address.clone(), &funds)?;
+
+            // load FUNDS from stroage, if none, create new Funds & save. Or else just append funds to existing Funds
+            let mut funds = FUNDS.may_load(deps.storage, address.clone())?.unwrap_or_else(|| Funds { funds: vec![] });
+            funds.funds.append(&mut info.funds.clone());
+            FUNDS.save(deps.storage, address.clone(), &funds)?;            
+                        
 
             // convert info.funds into a string
             let funds = info.funds.iter().map(|c| c.to_string()).collect::<Vec<String>>().join(", ");
