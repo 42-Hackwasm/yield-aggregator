@@ -1,4 +1,7 @@
-# yield optimizer
+# yield aggregator
+
+## https://github.com/42-Hackwasm
+
 ```bash
 # cargo install cargo-generate --features vendored-openssl
 # cargo install cargo-run-script
