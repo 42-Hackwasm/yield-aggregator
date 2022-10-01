@@ -1,7 +1,7 @@
 #[cfg(not(feature = "library"))]
 // COSMWASM
 use cosmwasm_std::entry_point;
-use cosmwasm_std::{Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult, to_binary, StdError, BankMsg, Coin};
+use cosmwasm_std::{Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult, to_binary, StdError, BankMsg, Coin, IbcMsg, IbcTimeout, IbcTimeoutBlock, SubMsg};
 
 use crate::coin_helpers::{convert_coins_vec_to_string};
 // ERRORS & MESSAGES
@@ -47,7 +47,7 @@ pub fn instantiate(deps: DepsMut, _env: Env, info: MessageInfo, msg: Instantiate
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
-pub fn execute( deps: DepsMut, _env: Env, info: MessageInfo, msg: ExecuteMsg) -> Result<Response, ContractError> {
+pub fn execute( deps: DepsMut, env: Env, info: MessageInfo, msg: ExecuteMsg) -> Result<Response, ContractError> {
     match msg {
         ExecuteMsg::AddFunds {} => {
             let address = info.sender.to_string();
@@ -77,7 +77,6 @@ pub fn execute( deps: DepsMut, _env: Env, info: MessageInfo, msg: ExecuteMsg) ->
 
             FUNDS.save(deps.storage, address.clone(), &funds)?;            
                         
-
             // convert info.funds into a string
             let funds = info.funds.iter().map(|c| c.to_string()).collect::<Vec<String>>().join(", ");
             let new_funds = FUNDS.load(deps.storage, address.clone())?;
@@ -90,6 +89,7 @@ pub fn execute( deps: DepsMut, _env: Env, info: MessageInfo, msg: ExecuteMsg) ->
             )
         },
 
+        // TODO: can we set array of coins here instead? how to send through via CLI/Website?
         ExecuteMsg::WithdrawFunds { denom, amount } => {
             let address = info.sender.to_string();
             let funds = FUNDS.may_load(deps.storage, address.clone())?;
@@ -120,17 +120,64 @@ pub fn execute( deps: DepsMut, _env: Env, info: MessageInfo, msg: ExecuteMsg) ->
                 FUNDS.save(deps.storage, address.clone(), &funds)?;          
             }
 
-
-            let bank_msg = BankMsg::Send {
-                to_address: address.clone(),
-                amount: vec![Coin { denom: denom.clone(), amount: amount }],
-            };
-
             Ok(Response::new()
                 .add_attribute("action", "withdraw_funds")                
-                .add_message(bank_msg)                
+                .add_message(BankMsg::Send {
+                    to_address: address.clone(),
+                    amount: vec![Coin { denom: denom.clone(), amount: amount }],
+                })                
             )
         },
+
+        // move funds to another chains vault contract address
+        ExecuteMsg::TransferFunds { recipient_contract_address, channel_id, denom, amount } => {
+            let address = info.sender.to_string();
+            let funds = FUNDS.may_load(deps.storage, address.clone())?;
+            
+            // check if funds is none
+            if funds.is_none() {
+                return Err(ContractError::NoFundsInContract{});
+            }
+            
+            let ibc_timeout_block = IbcTimeout::with_block(IbcTimeoutBlock { height: env.block.height + 1000, revision: 0});
+
+            // TODO: how to send tokens & some binary message for what we want to do on the other side once OPEN?
+            // ICA, IBC direct binary?
+
+
+
+            // transfer via an IBC channel
+            let ibc_msg = IbcMsg::Transfer {
+                /// exisiting channel to send the tokens over
+                channel_id: channel_id.clone(),
+                /// address on the remote chain to receive these tokens
+                to_address: recipient_contract_address,
+                /// packet data only supports one coin
+                /// https://github.com/cosmos/cosmos-sdk/blob/v0.40.0/proto/ibc/applications/transfer/v1/transfer.proto#L11-L20
+                amount: Coin { denom: denom.clone(), amount: amount },
+                /// when packet times out, measured on remote chain
+                timeout: ibc_timeout_block.clone(),
+            };
+
+            let ibc_msg_2 = IbcMsg::SendPacket { 
+                channel_id: channel_id, 
+                data:  Binary::from(b"hello world"),
+                timeout: ibc_timeout_block, 
+            };
+
+            let ibc_submsg: SubMsg<_> = SubMsg::new(ibc_msg);
+            let ibc_submsg_2: SubMsg<_> = SubMsg::new(ibc_msg_2);
+
+
+            Ok(Response::new()
+                .add_attribute("action", "transfer_funds")                                
+                // .add_messages(vec![ibc_msg, ibc_msg_2])
+                .add_submessage(ibc_submsg)
+                .add_submessage(ibc_submsg_2) // this way we can get the replies later & ensure it was sucessful. Do we need that though for main hub?
+            )
+        }
+
+
     }
 }
 

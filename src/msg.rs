@@ -18,6 +18,13 @@ pub enum ExecuteMsg {
         denom: String,
         amount: Uint128,
     },
+
+    TransferFunds {
+        recipient_contract_address: String,
+        channel_id: String,
+        denom: String,
+        amount: Uint128,
+    },    
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
