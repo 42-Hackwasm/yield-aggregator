@@ -69,7 +69,22 @@ pub fn execute( deps: DepsMut, _env: Env, info: MessageInfo, msg: ExecuteMsg) ->
 
             // load FUNDS from stroage, if none, create new Funds & save. Or else just append funds to existing Funds
             let mut funds = FUNDS.may_load(deps.storage, address.clone())?.unwrap_or_else(|| Funds { funds: vec![] });
-            funds.funds.append(&mut info.funds.clone());
+            // funds.funds.append(&mut info.funds.clone());
+
+            // loop through funds.funds & add coins if they are the same denom
+            for coin in info.funds.clone() {
+                let mut found = false;
+                for i in 0..funds.funds.len() {
+                    if funds.funds[i].denom == coin.denom {
+                        funds.funds[i].amount += coin.amount;
+                        found = true;
+                    }
+                }
+                if !found {
+                    funds.funds.push(coin);
+                }
+            }
+
             FUNDS.save(deps.storage, address.clone(), &funds)?;            
                         
 

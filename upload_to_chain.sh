@@ -15,11 +15,11 @@ sleep 4
 CODE_ID_YIELD=$(junod query tx $YIELD_CONTRACT --output json | jq -r '.logs[0].events[-1].attributes[0].value') && echo $CODE_ID_YIELD # 329
 YIELD_TX_INIT=$(junod tx wasm instantiate "$CODE_ID_YIELD" '{"contract_admin": "juno10c3slrqx3369mfsr9670au22zvq082jaej8ve4"}' --label "42-hackwasm" $EXECUTE_GAS $CHAIN_ID --broadcast-mode sync --output json -y --admin $KEY_ADDR --from $KEY | jq -r '.txhash') && echo $YIELD_TX_INIT
 ADDR_YIELD=$(junod query tx $YIELD_TX_INIT --output json | jq -r '.logs[0].events[0].attributes[0].value') && echo "Contract Address for Yield: $ADDR_YIELD"
-# export ADDR_YIELD=juno1h0knfsptrhq24ejpf5v9jje48hv24zpuxe385hmzj5ck286346lspyykl8
+# export ADDR_YIELD=juno1gsv0tw0fknwu0mw74e4x0f4uf43awls3exyykqhah0azjulvsndsxwje4z
 
 
 # ! test adding funds to the contract
-junod tx wasm execute $ADDR_YIELD '{"add_funds":{}}' --from $KEY -y --broadcast-mode sync --output json $EXECUTE_GAS $CHAIN_ID --node $JUNOD_NODE --amount 3ujunox
+junod tx wasm execute $ADDR_YIELD '{"add_funds":{}}' --from $KEY -y --broadcast-mode sync --output json $EXECUTE_GAS $CHAIN_ID --node $JUNOD_NODE --amount 3ujunox,7uusdcx
 
 # ! query funds of a user
 junod query wasm contract-state smart $ADDR_YIELD '{"get_funds":{"address": "juno10c3slrqx3369mfsr9670au22zvq082jaej8ve4"}}' --node $JUNOD_NODE

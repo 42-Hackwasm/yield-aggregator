@@ -1,0 +1,95 @@
+version: 1
+
+chains:
+  malaga:
+    chain_id: malaga-420
+    # Bech32 prefix for addresses
+    prefix: wasm
+    # This determines the gas payments we make (and defines the fee token)
+    gas_price: 0.25umlg
+    # The path we use to derive the private key from the mnemonic
+    # Note: The hd paths shown have no meaningful relationship to the existing chains.
+    # It is recommended practice to use a different hd_path than those commonly used for user accounts.
+    hd_path: m/44'/1234'/0'/1'
+    # If you include an optional faucet it will load the relayer with tokens in `ibc-setup init`
+    faucet: https://faucet.malaga-420.cosmwasm.com:443
+    # You can optionally define a default ics20_port that will be used instead of transfer if no flags set
+    ics20_port: 'transfer'
+    estimated_block_time: 6000
+    estimated_indexer_time: 100
+    # You can include multiple RPC endpoints and it will rotate through them if
+    # one is down (TODO)
+    rpc:
+      - https://rpc.malaga-420.cosmwasm.com:443
+  local_wasm:
+    chain_id: testing
+    prefix: wasm
+    gas_price: 0.025ucosm
+    hd_path: m/44'/1234'/0'/2'
+    estimated_block_time: 400
+    estimated_indexer_time: 60
+    rpc:
+      - http://localhost:26659
+  local_gaia:
+    chain_id: gaia-testing
+    prefix: cosmos
+    gas_price: 0.025uatom
+    hd_path: m/44'/1234'/0'/3'
+    estimated_block_time: 400
+    estimated_indexer_time: 60
+    rpc:
+      - http://localhost:26655
+  local_osmo:
+    chain_id: osmo-testing
+    prefix: osmo
+    gas_price: 0uosmo
+    hd_path: m/44'/1234'/0'/4'
+    estimated_block_time: 400
+    estimated_indexer_time: 60
+    rpc:
+      - http://localhost:26653
+  cosmoshub-4:
+    chain_id: cosmoshub-4
+    prefix: cosmos
+    gas_price: 0.026uatom
+    # Default keyring hd_path for the SDK
+    # This is used for example by `gaiad keys` and most CosmJS webapps
+    # Set this if you want to share the relayer account with a CLI account (not recommended)
+    hd_path: m/44'/118'/0'/0/0
+    ics20_port: 'transfer'
+    estimated_block_time: 7000
+    estimated_indexer_time: 150
+    rpc:
+      - https://rpc.cosmos.network:443
+  juno:
+    chain_id: juno-1
+    prefix: juno
+    gas_price: 0.005ujuno
+    hd_path: m/44'/118'/0'/0/0
+    ics20_port: 'transfer'
+    estimated_block_time: 7000
+    estimated_indexer_time: 250
+    rpc:
+      - https://rpc-juno.itastakers.com:443
+  uni:
+    chain_id: uni-3
+    prefix: juno
+    gas_price: 0.025ujunox
+    hd_path: m/44'/118'/0'/0/0
+    ics20_port: 'transfer'
+    estimated_block_time: 7000
+    estimated_indexer_time: 250
+    # request in juno faucet channel https://discord.gg/TfsuB6yd
+    # faucet: https://faucet.uni.juno.deuslabs.fi
+    rpc:
+      - https://rpc.uni.juno.deuslabs.fi:443
+  osmosis:
+    chain_id: osmosis-1
+    prefix: osmo
+    gas_price: 0uosmo
+    hd_path: m/44'/118'/0'/0/0
+    ics20_port: 'transfer'
+    estimated_block_time: 7000
+    estimated_indexer_time: 250
+    rpc:
+      - https://rpc-osmosis.blockapsis.com:443

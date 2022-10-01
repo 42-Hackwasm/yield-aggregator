@@ -19,6 +19,9 @@ pub fn query_config(deps: Deps) -> StdResult<ConfigResponse> {
 
 // get Funds a given user has sent to the contract
 pub fn get_funds(deps: Deps, address: String) -> StdResult<Funds> {
-    let funds = FUNDS.load(deps.storage, address)?;
-    Ok(funds)
+    let funds = FUNDS.may_load(deps.storage, address)?;
+
+    Ok(funds.unwrap_or_else(|| Funds {
+        funds: vec![]
+    }))
 }

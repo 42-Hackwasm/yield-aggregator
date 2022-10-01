@@ -1,0 +1,52 @@
+global:
+    api-listen-addr: :5183
+    timeout: 10s
+    memo: hackwasm 42 relayer
+    light-cache-size: 20
+chains:
+    juno:
+        type: cosmos
+        value:
+            key: testwasm
+            chain-id: juno-1
+            rpc-addr: https://rpc-juno-ia.cosmosia.notional.ventures:443/
+            account-prefix: juno
+            keyring-backend: os
+            gas-adjustment: 1.2
+            gas-prices: 0.01ujuno
+            min-gas-amount: 0
+            debug: false
+            timeout: 20s
+            output-format: json
+            sign-mode: direct
+    osmosis:
+        type: cosmos
+        value:
+            key: testwasm
+            chain-id: osmosis-1
+            rpc-addr: https://osmosis-rpc.polkachu.com:443
+            account-prefix: osmo
+            keyring-backend: os
+            gas-adjustment: 1.2
+            gas-prices: 0.01uosmo
+            min-gas-amount: 0
+            debug: false
+            timeout: 20s
+            output-format: json
+            sign-mode: direct
+    uni-5:
+        type: cosmos
+        value:
+            key: testwasm
+            chain-id: uni-5
+            rpc-addr: https://rpc.uni.junonetwork.io:443
+            account-prefix: juno
+            keyring-backend: os
+            gas-adjustment: 1.5
+            gas-prices: 0.025ujunox
+            min-gas-amount: 0
+            debug: true
+            timeout: 10s
+            output-format: json
+            sign-mode: direct
+paths: {}
