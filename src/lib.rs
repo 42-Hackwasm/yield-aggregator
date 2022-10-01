@@ -4,6 +4,7 @@ pub mod msg;
 pub mod state;
 
 pub mod queries;
+pub mod coin_helpers;
 
 #[cfg(test)]
 pub mod test;
