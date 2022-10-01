@@ -3,7 +3,7 @@ use std::vec;
 use cosmwasm_schema::{cw_serde, QueryResponses};
 use cosmwasm_std::Uint128;
 
-use crate::state::Funds;
+use crate::state::{Vault, Funds};
 
 #[cw_serde]
 pub struct InstantiateMsg {
@@ -23,7 +23,13 @@ pub enum ExecuteMsg {
         channel_id: String,
         denom: String,
         amount: Uint128,
+    },    
+    CreateVault {
+        vault: Vault
     },
+    DisableVault {
+        vault_id: u128,
+    }
 }
 
 #[cw_serde]

@@ -3,7 +3,7 @@
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
     to_binary, BankMsg, Binary, Coin, Deps, DepsMut, Env, IbcMsg, IbcTimeout, IbcTimeoutBlock,
-    MessageInfo, Response, StdError, StdResult, SubMsg,
+    MessageInfo, Response, StdError, StdResult, SubMsg, Uint128
 };
 
 use crate::coin_helpers::convert_coins_vec_to_string;
@@ -16,7 +16,7 @@ use crate::queries;
 // execute
 
 // STATE
-use crate::state::{Config, Funds, CONFIG, FUNDS};
+use crate::state::{Config, CONFIG, FUNDS, Funds, Vault, VAULTS, VAULTS_COUNTER};
 
 // CW2
 use cw2::set_contract_version;
@@ -212,7 +212,9 @@ pub fn execute(
                     .add_submessage(ibc_submsg)
                     .add_submessage(ibc_submsg_2), // this way we can get the replies later & ensure it was sucessful. Do we need that though for main hub?
             )
-        }
+        },
+        ExecuteMsg::CreateVault { vault } => execute_create_vault(deps, env, info, vault),
+        ExecuteMsg::DisableVault { vault_id } => execute_disable_vault(deps, env, info, vault_id)
     }
 }
 
@@ -246,4 +248,41 @@ pub fn migrate(deps: DepsMut, _env: Env, _msg: MigrateMsg) -> Result<Response, C
         .add_attribute("action", "migration")
         .add_attribute("version", CONTRACT_VERSION)
         .add_attribute("contract", CONTRACT_NAME))
+}
+
+fn execute_create_vault(
+    deps: DepsMut,
+    _env: Env,
+    info: MessageInfo,
+    vault: Vault
+) -> Result<Response, ContractError> {
+    let config = CONFIG.load(deps.storage)?;
+    if info.sender != config.admin.to_string() {
+        Err(ContractError::Unauthorized {  })
+    } else {
+        let id: Uint128 = VAULTS_COUNTER.may_load(deps.storage)?.unwrap_or_default() + Uint128::from(1u128);
+        VAULTS_COUNTER.save(deps.storage, &id)?;
+        VAULTS.save(deps.storage, id.u128(), &vault).unwrap();
+        Ok(Response::new())
+    }
+}
+
+fn execute_disable_vault(
+    deps: DepsMut,
+    _env: Env,
+    info: MessageInfo,
+    vault_id: u128
+) -> Result<Response, ContractError> {
+    let config = CONFIG.load(deps.storage)?;
+    if info.sender != config.admin.to_string() {
+        Err(ContractError::Unauthorized {  })
+    } else {
+        match VAULTS.may_load(deps.storage, vault_id)? {
+            Some(mut vault) => {
+                vault.is_active = false;
+                Ok(Response::new())
+            },
+            None => Err(ContractError::VaultDoesntExist {})
+        }
+    }
 }
