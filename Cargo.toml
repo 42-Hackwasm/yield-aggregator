@@ -1,15 +1,15 @@
 [workspace]
-members = ["contracts/*"]
+members = ["contracts/*", "packages/*"]
+
+# exclude = ["contracts/umee"]
 
 [profile.release]
-rpath = false
-lto = true
-overflow-checks = true
-opt-level = 3
+codegen-units = 1
 debug = false
 debug-assertions = false
-
-[profile.release.package.yield-optimizer]
-codegen-units = 1
 incremental = false
+lto = true
+opt-level = 3
 overflow-checks = true
+panic = 'abort'
+rpath = false

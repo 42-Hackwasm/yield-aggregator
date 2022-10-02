@@ -1,0 +1,19 @@
+[package]
+name = "cw-denom"
+version = "0.1.0"
+edition = "2021"
+authors = []
+repository = "https://github.com/DA0-DA0/dao-contracts"
+description = "A package for validation and handling of cw20 and native Cosmos SDK denominations."
+
+
+[dependencies]
+cosmwasm-std = "1.1"
+schemars = "0.8"
+serde = { version = "1.0", default-features = false, features = ["derive"] }
+thiserror = { version = "1.0" }
+cw20 = "0.15"
+
+[dev-dependencies]
+cw20-base = "0.15"
+cw-multi-test = "0.15"
