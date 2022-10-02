@@ -7,16 +7,16 @@ pub enum ContractError {
     Std(#[from] StdError),
 
     #[error("Unauthorized")]
-    Unauthorized {},    
+    Unauthorized {},
 
     #[error("No funds were send when they are required")]
     NoFundsSend {},
 
     #[error("You do not have any funds in this contract")]
-    NoFundsInContract{},
-    
+    NoFundsInContract {},
+
     #[error("Coin is not found.")]
-    CoinNotFound{ },
+    CoinNotFound {},
 
     #[error("Not enough funds. You only have {amount:?} {denom:?} in the contract")]
     NotEnoughFunds { denom: String, amount: String },

@@ -1,7 +1,6 @@
 use crate::error::ContractError;
 use cosmwasm_std::Coin;
 
-
 /// Modified assert_sent_sufficient_coin function just so it has to be == the required amount
 // pub fn assert_sent_exact_coin(sent: &[Coin], required: Option<Coin>) -> Result<(), ContractError> {
 //     if let Some(required_coin) = required {
@@ -47,7 +46,6 @@ pub fn convert_coins_vec_to_string(coins: Vec<Coin>) -> String {
     }
     string
 }
-
 
 // You send enough OR MORE coins with the correct denom(s)
 // https://github.com/InterWasm/cw-contracts/blob/main/contracts/nameservice/src/coin_helpers.rs
