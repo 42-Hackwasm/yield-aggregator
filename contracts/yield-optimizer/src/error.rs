@@ -20,4 +20,6 @@ pub enum ContractError {
 
     #[error("Not enough funds. You only have {amount:?} {denom:?} in the contract")]
     NotEnoughFunds { denom: String, amount: String },
+    #[error("No vault found with that id")]
+    VaultDoesntExist {},
 }

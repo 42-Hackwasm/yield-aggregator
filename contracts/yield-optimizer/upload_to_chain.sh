@@ -5,7 +5,7 @@ set -e
 JUNOD_NODE="https://rpc.uni.junonetwork.io:443" 
 KEY="testwasm"
 KEY_ADDR="juno10c3slrqx3369mfsr9670au22zvq082jaej8ve4"
-GAS="--gas-adjustment 1.1 --gas 1250000 --gas-prices=0.025ujunox"
+GAS="--gas-adjustment 1.1 --gas 1500000 --gas-prices=0.025ujunox"
 CHAIN_ID="--chain-id uni-5"
 
 EXECUTE_GAS="--gas-adjustment 1.1 --gas 500000 --gas-prices=0.025ujunox"
@@ -27,5 +27,12 @@ junod tx wasm execute $ADDR_YIELD '{"add_funds":{}}' --from $KEY -y --broadcast-
 
 junod tx wasm execute $ADDR_YIELD '{"withdraw_funds":{"denom": "uusdcx", "amount": "1"}}' --from $KEY -y --broadcast-mode sync --output json $EXECUTE_GAS $CHAIN_ID --node $JUNOD_NODE
 
+junod tx wasm execute $ADDR_YIELD '{"create_vault": {"vault": {"is_active": true, "chain": "juno", "dex": "junoswap", "pool_contract_address": "addr2...", "lp_token_contract_address": "addr1..", "reward_tokens": [{"native": "utest"}], "token1": { "native": "utoken1" }, "token2": { "cw20": "addr1.." }, "total_shares": "0"}}}' --from $KEY -y --broadcast-mode sync --output json $EXECUTE_GAS $CHAIN_ID --node $JUNOD_NODE
+
+junod tx wasm execute $ADDR_YIELD '{"disable_vault": {"vault_id": 1}}' --from $KEY -y --broadcast-mode sync --output json $EXECUTE_GAS $CHAIN_ID --node $JUNOD_NODE
+
 # ! query funds of a user
-junod query wasm contract-state smart $ADDR_YIELD '{"get_funds":{"address": "juno10c3slrqx3369mfsr9670au22zvq082jaej8ve4"}}' --node $JUNOD_NODE
+#junod query wasm contract-state smart $ADDR_YIELD '{"get_funds":{"address": "juno10c3slrqx3369mfsr9670au22zvq082jaej8ve4"}}' --node $JUNOD_NODE
+
+# ! query vaults created
+junod query wasm contract-state smart $ADDR_YIELD '{"get_vaults":{}}' --node $JUNOD_NODE
