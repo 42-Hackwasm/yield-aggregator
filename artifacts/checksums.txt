@@ -1,1 +1,1 @@
-bf8d562da34d38d4a7bfd07d7922a58c979cbf43ef126cec1c9e6b74c25cf69d  yield_optimizer.wasm
+c06ad6f981f2d072077e368b32ed909073859c59da743ddab05635a8f15611e0  yield_optimizer.wasm

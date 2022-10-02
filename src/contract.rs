@@ -1,11 +1,13 @@
+use std::ops::Mul;
+
 use crate::denom_utils::denom_to_string;
 #[cfg(not(feature = "library"))]
 // COSMWASM
 use cosmwasm_std::entry_point;
-use cosmwasm_std::Uint128;
 use cosmwasm_std::{
     to_binary, Addr, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdError, StdResult,
 };
+use cosmwasm_std::{Decimal, Uint128};
 
 // ERRORS & MESSAGES
 use crate::error::ContractError;
@@ -133,33 +135,26 @@ pub fn deposit(
 ) -> Result<Response, ContractError> {
     //todo: check funds are 2 tokens
     //todo: support for cw20
-    // Ok(Response::default().add_attribute("pool_addr", pool_addr))
-    // /*
     let pool_info: InfoResponse = deps
         .querier
         .query_wasm_smart(pool_addr.clone(), &WasmSwapQueryMsg::Info {})?;
 
-    Ok(Response::new().add_attribute("pool_info", pool_info.lp_token_address.to_string()))
-    // */
-
-    /*
     let funds = info.funds.clone();
     let token1_denom = &denom_to_string(&pool_info.token1_denom);
     let token2_denom = &denom_to_string(&pool_info.token2_denom);
-    let token1_amount = funds
-        .iter()
-        .find(|coin| coin.denom.eq(token1_denom))
-        .unwrap()
-        .amount;
-    let token2_amount = funds
-        .iter()
-        .find(|coin| coin.denom.eq(token2_denom))
-        .unwrap()
-        .amount;
-    */
-
-    //todo: get price
     /*
+        let token1_amount = funds
+            .iter()
+            .find(|coin| coin.denom.eq(token1_denom))
+            .unwrap()
+            .amount;
+        let token2_amount = funds
+            .iter()
+            .find(|coin| coin.denom.eq(token2_denom))
+            .unwrap()
+            .amount;
+    */
+    //todo: get price
     let token1_to_token2_price_response: Token1ForToken2PriceResponse =
         deps.querier.query_wasm_smart(
             pool_addr.clone(),
@@ -171,15 +166,39 @@ pub fn deposit(
             &WasmSwapQueryMsg::Token2ForToken1Price { token2_amount },
         )?;
 
-    let token1_amount = token2_to_token1_price_response.token1_amount.clone();
-    let token2_amount = token1_to_token2_price_response.token2_amount.clone();
+    let token1_price =
+        Decimal::from_ratio(token1_to_token2_price_response.token2_amount, token1_amount);
+    let token2_price =
+        Decimal::from_ratio(token2_to_token1_price_response.token1_amount, token2_amount);
+
+    let token1_value: Uint128 = token1_amount.mul(token1_price.clone());
+    let token2_value = token2_amount.mul(token2_price.clone());
+
+    let message = if token1_value > token2_amount {
+        "Should convert a bit of token_1 into token_2"
+    } else if token2_value > token1_amount {
+        "Should convert a bit of token_2 into token_1"
+    } else {
+        "Ready to LP"
+    };
+
     let attrs = vec![
-        ("token1_to_token2_amount", token2_amount.to_string()),
-        ("taken2_to_token1_amount", token1_amount.to_string()),
+        (
+            "token1_to_token2_amount",
+            token1_to_token2_price_response.token2_amount.to_string(),
+        ),
+        (
+            "token2_to_token1_amount",
+            token2_to_token1_price_response.token1_amount.to_string(),
+        ),
+        ("token1_price", token1_price.to_string()),
+        ("token2_price", token2_price.to_string()),
+        ("token1_value", token1_value.to_string()),
+        ("token2_value", token2_value.to_string()),
+        ("message", message.to_string()),
     ];
     let res = Response::new().add_attributes(attrs);
     Ok(res)
-    */
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
