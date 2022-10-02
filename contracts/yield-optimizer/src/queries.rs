@@ -2,10 +2,10 @@ use cosmwasm_std::{Deps, StdResult};
 use cosmwasm_std::Order::Ascending;
 
 // use crate::msg::{SomeMsg};
-use crate::msg::{ConfigResponse, VaultResponse};
+use crate::msg::{ConfigResponse, VaultResponse, PositionsResponse};
 // use cosmwasm_std::{Deps, Order, StdResult, Uint128};
 
-use crate::state::{CONFIG, FUNDS, Funds, Vault, VAULTS};
+use crate::state::{CONFIG, FUNDS, Funds, Vault, VAULTS, POSITIONS};
 
 pub fn query_config(deps: Deps) -> StdResult<ConfigResponse> {
     let config = CONFIG.load(deps.storage)?;
@@ -30,5 +30,16 @@ pub fn get_vaults(deps: Deps) -> StdResult<VaultResponse> {
     let vaults = res?;
     Ok(VaultResponse {
         vaults
+    })
+}
+
+pub fn get_positions(deps: Deps, address: String) -> StdResult<PositionsResponse> {
+    let res:StdResult<Vec<_>> = POSITIONS
+        .prefix(address)
+        .range(deps.storage, None, None, Ascending)
+        .collect();
+    let positions = res?;
+    Ok(PositionsResponse {
+        positions
     })
 }

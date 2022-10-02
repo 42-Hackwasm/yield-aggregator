@@ -3,7 +3,7 @@ use std::vec;
 use cosmwasm_schema::{cw_serde, QueryResponses};
 use cosmwasm_std::Uint128;
 
-use crate::state::{Funds, Vault};
+use crate::state::{Vault, Funds, UserPosition};
 
 #[cw_serde]
 pub struct InstantiateMsg {
@@ -41,6 +41,10 @@ pub enum QueryMsg {
     GetFunds { address: String },
     #[returns(VaultResponse)]
     GetVaults {},
+    #[returns(PositionsResponse)]
+    GetUserPositions {
+        address: String
+    },
 }
 
 #[cw_serde]
@@ -57,4 +61,9 @@ pub struct ConfigResponse {
 #[cw_serde]
 pub struct VaultResponse {
     pub vaults: Vec<(u128, Vault)>,
+}
+
+#[cw_serde]
+pub struct PositionsResponse {
+    pub positions: Vec<(u128, UserPosition)>
 }
