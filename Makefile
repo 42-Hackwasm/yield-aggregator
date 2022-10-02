@@ -8,3 +8,6 @@ build:
 	@RUSTFLAGS='-C link-arg=-s' cargo +stable build --all --target wasm32-unknown-unknown --release
 	@mkdir -p artifacts-local
 	@cp target/wasm32-unknown-unknown/release/*.wasm ./artifacts-local
+
+check:
+	cosmwasm-check target/wasm32-unknown-unknown/release/*.wasm

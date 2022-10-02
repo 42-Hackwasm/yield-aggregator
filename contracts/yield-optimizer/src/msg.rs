@@ -1,20 +1,19 @@
 use std::vec;
 
-use cosmwasm_std::{Coin, Uint128};
-use schemars::JsonSchema;
-use serde::{Deserialize, Serialize};
+use cosmwasm_schema::{cw_serde, QueryResponses};
+use cosmwasm_std::Uint128;
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-#[serde(rename_all = "snake_case")]
+use crate::state::Funds;
+
+#[cw_serde]
 pub struct InstantiateMsg {
     pub contract_admin: Option<String>,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-#[serde(rename_all = "snake_case")]
+#[cw_serde]
 pub enum ExecuteMsg {
-    AddFunds { },
-    WithdrawFunds { 
+    AddFunds {},
+    WithdrawFunds {
         denom: String,
         amount: Uint128,
     },
@@ -24,26 +23,25 @@ pub enum ExecuteMsg {
         channel_id: String,
         denom: String,
         amount: Uint128,
-    },    
+    },
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-#[serde(rename_all = "snake_case")]
+#[cw_serde]
+#[derive(QueryResponses)]
 pub enum QueryMsg {
+    #[returns(ConfigResponse)]
     GetConfig {},
+    #[returns(Funds)]
     GetFunds { address: String },
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-#[serde(rename_all = "snake_case")]
-pub enum MigrateMsg {
-
-}
+#[cw_serde]
+pub enum MigrateMsg {}
 
 // RESPONSES (maybe move to their own file?)
-#[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug)]
+#[cw_serde]
 pub struct ConfigResponse {
     pub admin: String,
     pub version: String,
-    pub name: String,    
+    pub name: String,
 }
