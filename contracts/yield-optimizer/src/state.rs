@@ -45,7 +45,7 @@ pub const FUNDS: Map<String, Funds> = Map::new("funds");
 pub const VAULTS: Map<u128, Vault> = Map::new("vaults");
 pub const VAULTS_COUNTER: Item<Uint128> = Item::new("vaults_counter");
 // user address, vault id, position
-pub const POSITIONS: Map<(String, Uint128), UserPosition> = Map::new("positions");
+pub const POSITIONS: Map<(String, u128), UserPosition> = Map::new("positions");
 
 
 

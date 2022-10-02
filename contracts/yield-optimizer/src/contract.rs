@@ -226,6 +226,8 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
         QueryMsg::GetFunds { address } => to_binary(&queries::get_funds(deps, address)?),
         
         QueryMsg::GetVaults {} => to_binary(&queries::get_vaults(deps)?),
+
+        QueryMsg::GetUserPositions { address } => to_binary(&queries::get_positions(deps, address)?),
     }
 }
 
