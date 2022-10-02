@@ -7,7 +7,7 @@ pub fn denom_to_string(denom: &Denom) -> String {
     }
 }
 
-pub fn denom_is_native(denom: Denom) -> bool {
+pub fn denom_is_native(denom: &Denom) -> bool {
     match denom {
         Denom::Native(_) => true,
         Denom::Cw20(_) => false,

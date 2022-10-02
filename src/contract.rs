@@ -1,11 +1,12 @@
 use std::ops::Mul;
 
-use crate::denom_utils::denom_to_string;
+use crate::denom_utils::{denom_is_native, denom_to_string};
 #[cfg(not(feature = "library"))]
 // COSMWASM
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
-    to_binary, Addr, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdError, StdResult,
+    coin, to_binary, Addr, Binary, CosmosMsg, Deps, DepsMut, Env, MessageInfo, Response, StdError,
+    StdResult, SubMsg, WasmMsg,
 };
 use cosmwasm_std::{Decimal, Uint128};
 
@@ -29,6 +30,7 @@ use crate::wasmswap_msg::InfoResponse;
 use crate::wasmswap_msg::QueryMsg as WasmSwapQueryMsg;
 use crate::wasmswap_msg::Token1ForToken2PriceResponse;
 use crate::wasmswap_msg::Token2ForToken1PriceResponse;
+use crate::wasmswap_msg::{ExecuteMsg as WasmSwapExecuteMsg, TokenSelect};
 
 // LOGIC
 #[cfg_attr(not(feature = "library"), entry_point)]
@@ -140,21 +142,9 @@ pub fn deposit(
         .query_wasm_smart(pool_addr.clone(), &WasmSwapQueryMsg::Info {})?;
 
     let funds = info.funds.clone();
-    let token1_denom = &denom_to_string(&pool_info.token1_denom);
-    let token2_denom = &denom_to_string(&pool_info.token2_denom);
-    /*
-        let token1_amount = funds
-            .iter()
-            .find(|coin| coin.denom.eq(token1_denom))
-            .unwrap()
-            .amount;
-        let token2_amount = funds
-            .iter()
-            .find(|coin| coin.denom.eq(token2_denom))
-            .unwrap()
-            .amount;
-    */
-    //todo: get price
+    let token1_denom = &pool_info.token1_denom;
+    let token2_denom = &pool_info.token2_denom;
+
     let token1_to_token2_price_response: Token1ForToken2PriceResponse =
         deps.querier.query_wasm_smart(
             pool_addr.clone(),
@@ -219,7 +209,60 @@ pub fn deposit(
         ("token2_amount_to_swap", token2_amount_to_swap.to_string()),
         ("message", message.to_string()),
     ];
-    let res = Response::new().add_attributes(attrs);
+
+    let mut res = Response::new().add_attributes(attrs);
+    let mut token_amount_to_swap = Uint128::zero();
+    if token1_amount_to_swap + token2_amount_to_swap > Uint128::zero() {
+        let token_to_swap = if token1_amount_to_swap > token2_amount_to_swap {
+            token_amount_to_swap = token1_amount_to_swap;
+            (TokenSelect::Token1, token1_denom)
+        } else {
+            token_amount_to_swap = token2_amount_to_swap;
+            (TokenSelect::Token2, token2_denom)
+        };
+
+        if denom_is_native(token_to_swap.1) {
+            let denom_str = denom_to_string(&token_to_swap.1);
+            res = res.add_submessages(vec![SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
+                contract_addr: pool_addr.to_string(),
+                msg: to_binary(&WasmSwapExecuteMsg::SwapAndSendTo {
+                    input_token: token_to_swap.0,
+                    input_amount: token_amount_to_swap.clone(),
+                    recipient: info.sender.to_string(),
+                    min_token: Uint128::zero(),
+                    expiration: None,
+                })
+                .unwrap(),
+                funds: vec![coin(token_amount_to_swap.u128(), denom_str)],
+            }))]);
+        } else {
+            res = res.add_submessages(vec![
+                SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
+                    contract_addr: denom_to_string(&token_to_swap.1),
+                    msg: to_binary(&cw20::Cw20ExecuteMsg::IncreaseAllowance {
+                        spender: pool_addr.to_string(),
+                        amount: token_amount_to_swap.clone(),
+                        expires: None,
+                    })
+                    .unwrap(),
+                    funds: vec![],
+                })),
+                SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
+                    contract_addr: pool_addr.to_string(),
+                    msg: to_binary(&WasmSwapExecuteMsg::Swap {
+                        input_token: token_to_swap.0,
+                        input_amount: token_amount_to_swap.clone(),
+                        min_output: Uint128::zero(), //todo: slippage
+                        expiration: None,
+                    })
+                    .unwrap(),
+                    funds: vec![],
+                })),
+            ]);
+        };
+    } else {
+        //TODO: join pool
+    };
     Ok(res)
 }
 
