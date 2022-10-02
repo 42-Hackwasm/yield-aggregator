@@ -1,1 +1,0 @@
-266fb504b24b4b606c7d6c4edd9444e7d0b50aadddd2960f64d2d39fb0064664  ./target/wasm32-unknown-unknown/release/yield_optimizer.wasm

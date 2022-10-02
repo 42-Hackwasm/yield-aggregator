@@ -5,7 +5,7 @@ build-opt:
 	 cosmwasm/workspace-optimizer:0.12.8
 
 build:
-	@RUSTFLAGS='-C link-arg=-s' cargo +stable build --all --target wasm32-unknown-unknown --release
+	@RUSTFLAGS='-C link-arg=-s' cargo +stable build --target wasm32-unknown-unknown --release --lib
 	@mkdir -p artifacts-local
 	@cp target/wasm32-unknown-unknown/release/*.wasm ./artifacts-local
 
