@@ -27,7 +27,7 @@ junod tx wasm execute $ADDR_YIELD '{"add_funds":{}}' --from $KEY -y --broadcast-
 
 junod tx wasm execute $ADDR_YIELD '{"withdraw_funds":{"denom": "uusdcx", "amount": "1"}}' --from $KEY -y --broadcast-mode sync --output json $EXECUTE_GAS $CHAIN_ID --node $JUNOD_NODE
 
-junod tx wasm execute $ADDR_YIELD '{"create_vault": {"vault": {"is_active": true, "chain": "juno", "dex": "junoswap", "lp_token_contract_address": "addr1..", "earned_token_name": "LUNA", "earned_token_address": "addr2...", "token1": { "denom": "xyz", "token_contract_address": "addr3.."}, "token2": { "denom": "zzz", "token_contract_address": "addr4"}, "total_shares": "0"}}}' --from $KEY -y --broadcast-mode sync --output json $EXECUTE_GAS $CHAIN_ID --node $JUNOD_NODE
+junod tx wasm execute $ADDR_YIELD '{"create_vault": {"vault": {"is_active": true, "chain": "juno", "dex": "junoswap", "pool_contract_address": "addr2...", "lp_token_contract_address": "addr1..", "reward_tokens": [{"native": "utest"}], "token1": { "native": "utoken1" }, "token2": { "cw20": "addr1.." }, "total_shares": "0"}}}' --from $KEY -y --broadcast-mode sync --output json $EXECUTE_GAS $CHAIN_ID --node $JUNOD_NODE
 
 junod tx wasm execute $ADDR_YIELD '{"disable_vault": {"vault_id": 1}}' --from $KEY -y --broadcast-mode sync --output json $EXECUTE_GAS $CHAIN_ID --node $JUNOD_NODE
 

@@ -3,6 +3,7 @@ use serde::{Deserialize, Serialize};
 
 use cosmwasm_std::{Addr, Coin, Deps, Uint128};
 use cw_storage_plus::{Item, Map};
+use cw20::{Denom};
 
 use crate::ContractError;
 
@@ -19,21 +20,15 @@ pub struct Funds {
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-pub struct Asset {
-    pub denom: String,
-    pub token_contract_address: String
-}
-
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct Vault {
     pub is_active: bool,
     pub chain: String,
     pub dex: String,
     pub lp_token_contract_address: String,
-    pub earned_token_name: String,
-    pub earned_token_address: String,
-    pub token1: Asset,
-    pub token2: Asset,
+    pub pool_contract_address: String,
+    pub reward_tokens: Vec<Denom>,
+    pub token1: Denom,
+    pub token2: Denom,
     pub total_shares: Uint128
 }
 
