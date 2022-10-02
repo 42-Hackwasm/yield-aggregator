@@ -1,6 +1,6 @@
 use std::vec;
 
-use cosmwasm_std::Coin;
+use cosmwasm_std::{Addr, Coin, Uint128};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
@@ -13,7 +13,12 @@ pub struct InstantiateMsg {
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum ExecuteMsg {
-    AddFunds { },
+    AddFunds {},
+    Deposit {
+        pool_addr: Addr,
+        token1_amount: Uint128,
+        token2_amount: Uint128,
+    },
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -25,14 +30,12 @@ pub enum QueryMsg {
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
-pub enum MigrateMsg {
-
-}
+pub enum MigrateMsg {}
 
 // RESPONSES (maybe move to their own file?)
 #[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug)]
 pub struct ConfigResponse {
     pub admin: String,
     pub version: String,
-    pub name: String,    
+    pub name: String,
 }

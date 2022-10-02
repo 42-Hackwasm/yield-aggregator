@@ -225,17 +225,6 @@ dependencies = [
 
 [[package]]
 name = "cw-storage-plus"
-version = "0.11.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7d7ee1963302b0ac2a9d42fe0faec826209c17452bfd36fbfd9d002a88929261"
-dependencies = [
- "cosmwasm-std",
- "schemars",
- "serde",
-]
-
-[[package]]
-name = "cw-storage-plus"
 version = "0.15.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "dc6cf70ef7686e2da9ad7b067c5942cd3e88dd9453f7af42f54557f8af300fb0"
@@ -280,18 +269,6 @@ checksum = "f7002e6f9c1a1ef3915dca704a6306ba00c39495efd928551d6077c734f9a3d8"
 dependencies = [
  "cosmwasm-std",
  "cw-storage-plus 0.10.3",
- "schemars",
- "serde",
-]
-
-[[package]]
-name = "cw2"
-version = "0.11.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c1d81d7c359d6c1fba3aa83dad7ec6f999e512571380ae62f81257c3db569743"
-dependencies = [
- "cosmwasm-std",
- "cw-storage-plus 0.11.1",
  "schemars",
  "serde",
 ]
@@ -861,23 +838,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9c8d87e72b64a3b4db28d11ce29237c246188f4f51057d65a7eab63b7987e423"
 
 [[package]]
-name = "wasmswap"
-version = "1.1.0-beta"
-source = "git+https://github.com/Wasmswap/wasmswap-contracts.git#2affb3529e6e3f298e90d4f388b8d041ec2c0ad6"
-dependencies = [
- "cosmwasm-std",
- "cosmwasm-storage",
- "cw-storage-plus 0.10.3",
- "cw0",
- "cw2 0.11.1",
- "cw20",
- "cw20-base",
- "schemars",
- "serde",
- "thiserror",
-]
-
-[[package]]
 name = "yield-optimizer"
 version = "0.1.0"
 dependencies = [
@@ -887,10 +847,11 @@ dependencies = [
  "cw-multi-test",
  "cw-storage-plus 0.15.1",
  "cw2 0.15.1",
+ "cw20",
+ "cw20-base",
  "schemars",
  "serde",
  "thiserror",
- "wasmswap",
 ]
 
 [[package]]

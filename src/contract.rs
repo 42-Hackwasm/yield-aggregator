@@ -1,6 +1,8 @@
+use crate::denom_utils::denom_to_string;
 #[cfg(not(feature = "library"))]
 // COSMWASM
 use cosmwasm_std::entry_point;
+use cosmwasm_std::Uint128;
 use cosmwasm_std::{
     to_binary, Addr, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdError, StdResult,
 };
@@ -20,6 +22,11 @@ use crate::state::{Config, Funds, CONFIG, FUNDS};
 use cw2::set_contract_version;
 const CONTRACT_NAME: &str = "crates.io:yield-aggregator";
 const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
+
+use crate::wasmswap_msg::InfoResponse;
+use crate::wasmswap_msg::QueryMsg as WasmSwapQueryMsg;
+use crate::wasmswap_msg::Token1ForToken2PriceResponse;
+use crate::wasmswap_msg::Token2ForToken1PriceResponse;
 
 // LOGIC
 #[cfg_attr(not(feature = "library"), entry_point)]
@@ -61,6 +68,11 @@ pub fn execute(
 ) -> Result<Response, ContractError> {
     match msg {
         ExecuteMsg::AddFunds {} => add_funds(deps, env, info),
+        ExecuteMsg::Deposit {
+            pool_addr,
+            token1_amount,
+            token2_amount,
+        } => deposit(deps, env, info, pool_addr, token1_amount, token2_amount),
     }
 }
 
@@ -111,11 +123,63 @@ pub fn add_funds(deps: DepsMut, _env: Env, info: MessageInfo) -> Result<Response
         .add_attribute("new_funds", new_funds))
 }
 
-pub fn deposit(deps: DepsMut, env: Env, info: MessageInfo) -> Result<Response, ContractError> {
-    let pool_addr = Addr::unchecked("fake pool addr");
-    let funds = info.funds.clone();
+pub fn deposit(
+    deps: DepsMut,
+    env: Env,
+    info: MessageInfo,
+    pool_addr: Addr,
+    token1_amount: Uint128,
+    token2_amount: Uint128,
+) -> Result<Response, ContractError> {
+    //todo: check funds are 2 tokens
+    //todo: support for cw20
+    // Ok(Response::default().add_attribute("pool_addr", pool_addr))
+    // /*
+    let pool_info: InfoResponse = deps
+        .querier
+        .query_wasm_smart(pool_addr.clone(), &WasmSwapQueryMsg::Info {})?;
 
-    todo!()
+    Ok(Response::new().add_attribute("pool_info", pool_info.lp_token_address.to_string()))
+    // */
+
+    /*
+    let funds = info.funds.clone();
+    let token1_denom = &denom_to_string(&pool_info.token1_denom);
+    let token2_denom = &denom_to_string(&pool_info.token2_denom);
+    let token1_amount = funds
+        .iter()
+        .find(|coin| coin.denom.eq(token1_denom))
+        .unwrap()
+        .amount;
+    let token2_amount = funds
+        .iter()
+        .find(|coin| coin.denom.eq(token2_denom))
+        .unwrap()
+        .amount;
+    */
+
+    //todo: get price
+    /*
+    let token1_to_token2_price_response: Token1ForToken2PriceResponse =
+        deps.querier.query_wasm_smart(
+            pool_addr.clone(),
+            &WasmSwapQueryMsg::Token1ForToken2Price { token1_amount },
+        )?;
+    let token2_to_token1_price_response: Token2ForToken1PriceResponse =
+        deps.querier.query_wasm_smart(
+            pool_addr.clone(),
+            &WasmSwapQueryMsg::Token2ForToken1Price { token2_amount },
+        )?;
+
+    let token1_amount = token2_to_token1_price_response.token1_amount.clone();
+    let token2_amount = token1_to_token2_price_response.token2_amount.clone();
+    let attrs = vec![
+        ("token1_to_token2_amount", token2_amount.to_string()),
+        ("taken2_to_token1_amount", token1_amount.to_string()),
+    ];
+    let res = Response::new().add_attributes(attrs);
+    Ok(res)
+    */
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
