@@ -174,9 +174,25 @@ pub fn deposit(
     let token1_value: Uint128 = token1_amount.mul(token1_price.clone());
     let token2_value = token2_amount.mul(token2_price.clone());
 
+    let total_token1_value = token1_amount + token2_value;
+    let total_token2_value = token2_amount + token1_value;
+
+    let mut token1_missing_amount = Uint128::zero();
+    let mut token2_missing_amount = Uint128::zero();
+    let mut token1_amount_to_swap = Uint128::zero();
+    let mut token2_amount_to_swap = Uint128::zero();
+
     let message = if token1_value > token2_amount {
+        let token2_required_amount =
+            Uint128::one().mul(Decimal::from_ratio(total_token2_value, 2u128));
+        token2_missing_amount = token2_required_amount - token2_amount;
+        token1_amount_to_swap = token2_missing_amount * token2_price;
         "Should convert a bit of token_1 into token_2"
     } else if token2_value > token1_amount {
+        let token1_required_amount =
+            Uint128::one().mul(Decimal::from_ratio(total_token1_value, 2u128));
+        token1_missing_amount = token1_required_amount - token1_amount;
+        token2_amount_to_swap = token1_missing_amount * token1_price;
         "Should convert a bit of token_2 into token_1"
     } else {
         "Ready to LP"
@@ -195,6 +211,12 @@ pub fn deposit(
         ("token2_price", token2_price.to_string()),
         ("token1_value", token1_value.to_string()),
         ("token2_value", token2_value.to_string()),
+        ("token1_total_value", total_token1_value.to_string()),
+        ("token2_total_value", total_token2_value.to_string()),
+        ("token1_missing_amount", token1_missing_amount.to_string()),
+        ("token2_missing_amount", token2_missing_amount.to_string()),
+        ("token1_amount_to_swap", token1_amount_to_swap.to_string()),
+        ("token2_amount_to_swap", token2_amount_to_swap.to_string()),
         ("message", message.to_string()),
     ];
     let res = Response::new().add_attributes(attrs);
