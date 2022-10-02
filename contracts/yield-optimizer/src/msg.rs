@@ -39,6 +39,8 @@ pub enum QueryMsg {
     GetConfig {},
     #[returns(Funds)]
     GetFunds { address: String },
+    #[returns(VaultResponse)]
+    GetVaults {},
 }
 
 #[cw_serde]
@@ -49,5 +51,10 @@ pub enum MigrateMsg {}
 pub struct ConfigResponse {
     pub admin: String,
     pub version: String,
-    pub name: String,
+    pub name: String,    
+}
+
+#[cw_serde]
+pub struct VaultResponse {
+    pub vaults: Vec<(u128, Vault)>
 }

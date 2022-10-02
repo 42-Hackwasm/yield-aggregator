@@ -224,6 +224,8 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
         QueryMsg::GetConfig {} => to_binary(&queries::query_config(deps)?),
 
         QueryMsg::GetFunds { address } => to_binary(&queries::get_funds(deps, address)?),
+        
+        QueryMsg::GetVaults {} => to_binary(&queries::get_vaults(deps)?),
     }
 }
 
@@ -257,7 +259,7 @@ fn execute_create_vault(
     vault: Vault
 ) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
-    if info.sender != config.admin.to_string() {
+    if info.sender.to_string() != config.admin.to_string() {
         Err(ContractError::Unauthorized {  })
     } else {
         let id: Uint128 = VAULTS_COUNTER.may_load(deps.storage)?.unwrap_or_default() + Uint128::from(1u128);
@@ -280,6 +282,7 @@ fn execute_disable_vault(
         match VAULTS.may_load(deps.storage, vault_id)? {
             Some(mut vault) => {
                 vault.is_active = false;
+                VAULTS.save(deps.storage, vault_id, &vault)?;
                 Ok(Response::new())
             },
             None => Err(ContractError::VaultDoesntExist {})
