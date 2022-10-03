@@ -3,7 +3,7 @@ use std::fs::create_dir_all;
 
 use cosmwasm_schema::{export_schema, remove_schemas, schema_for};
 
-use yield_optimizer::msg::{ExecuteMsg, InstantiateMsg, QueryMsg, MigrateMsg};
+use yield_optimizer::msg::{ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg};
 use yield_optimizer::state::Config;
 
 fn main() {
@@ -16,5 +16,5 @@ fn main() {
     export_schema(&schema_for!(ExecuteMsg), &out_dir);
     export_schema(&schema_for!(QueryMsg), &out_dir);
     export_schema(&schema_for!(MigrateMsg), &out_dir);
-    export_schema(&schema_for!(Config), &out_dir);    
+    export_schema(&schema_for!(Config), &out_dir);
 }

@@ -19,6 +19,10 @@ pub enum ExecuteMsg {
         token1_amount: Uint128,
         token2_amount: Uint128,
     },
+    PrepareLiquidity {
+        token_bought: Uint128,
+    },
+    AddLiquidity {},
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
