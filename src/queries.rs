@@ -1,10 +1,12 @@
-use cosmwasm_std::{Deps, StdResult};
+use std::vec;
 
-// use crate::msg::{SomeMsg};
-use crate::msg::ConfigResponse;
-// use cosmwasm_std::{Deps, Order, StdResult, Uint128};
+use cosmwasm_std::{Decimal, Deps, Env, StdResult};
 
-use crate::state::{Funds, CONFIG, FUNDS};
+use crate::wasmswap_msg::QueryMsg as WasmSwapQueryMsg;
+use crate::{msg::ConfigResponse, wasmswap_msg::InfoResponse};
+use cw20::{BalanceResponse, Cw20QueryMsg};
+
+use crate::state::{Funds, Position, CONFIG, FUNDS};
 
 pub fn query_config(deps: Deps) -> StdResult<ConfigResponse> {
     let config = CONFIG.load(deps.storage)?;
@@ -19,4 +21,44 @@ pub fn query_config(deps: Deps) -> StdResult<ConfigResponse> {
 pub fn get_funds(deps: Deps, address: String) -> StdResult<Funds> {
     let funds = FUNDS.load(deps.storage, address)?;
     Ok(funds)
+}
+
+// Get Positions
+pub fn get_positions(deps: Deps, env: Env) -> StdResult<Vec<Position>> {
+    //TODO: Load vaults from storage
+    let mut positions: Vec<Position> = vec![];
+    // Query LP Token Balance
+    let pool_addr = deps
+        .api
+        .addr_validate("juno1j4ezvp80mnn75hlngak35n6wwzemxqjxdncdxc5n9dfw6s0q080qyhh9zl")
+        .unwrap();
+    let lp_token_addr = deps
+        .api
+        .addr_validate("juno1hqkjtyk9lhykua80dxacqufzawcu55flug8j675xfpaxplselrasvkjmjl")
+        .unwrap();
+    let lp_token_balance: BalanceResponse = deps
+        .querier
+        .query_wasm_smart(
+            lp_token_addr,
+            &Cw20QueryMsg::Balance {
+                address: env.contract.address.to_string(),
+            },
+        )
+        .unwrap();
+
+    //Query Pool Info
+    let pool_info: InfoResponse = deps
+        .querier
+        .query_wasm_smart(pool_addr.clone(), &WasmSwapQueryMsg::Info {})?;
+
+    // Calculate our Share of the Pool
+    let pool_share = Decimal::from_ratio(lp_token_balance.balance, pool_info.lp_token_supply);
+
+    // Populate positions
+    positions.push(Position {
+        pool_share,
+        pool_token1_balance: pool_info.token1_reserve,
+        pool_token2_balance: pool_info.token2_reserve,
+    });
+    Ok(positions)
 }

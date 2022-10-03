@@ -2,7 +2,7 @@ use cw20::Denom;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
-use cosmwasm_std::{Addr, Coin, Deps, Uint128};
+use cosmwasm_std::{Addr, Coin, Decimal, Deps, Uint128};
 use cw_storage_plus::{Item, Map};
 
 use crate::ContractError;
@@ -36,3 +36,10 @@ pub struct Deposit {
 
 pub const BALANCES: Map<String, Uint128> = Map::new("balances");
 pub const DEPOSIT: Item<Deposit> = Item::new("deposit");
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+pub struct Position {
+    pub pool_share: Decimal,
+    pub pool_token1_balance: Uint128,
+    pub pool_token2_balance: Uint128,
+}

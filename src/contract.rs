@@ -435,10 +435,11 @@ pub fn add_liquidity(
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
-pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
+pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
         QueryMsg::GetConfig {} => to_binary(&queries::query_config(deps)?),
         QueryMsg::GetFunds { address } => to_binary(&queries::get_funds(deps, address)?),
+        QueryMsg::GetPositions {} => to_binary(&queries::get_positions(deps, env)?),
     }
 }
 

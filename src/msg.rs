@@ -30,6 +30,7 @@ pub enum ExecuteMsg {
 pub enum QueryMsg {
     GetConfig {},
     GetFunds { address: String },
+    GetPositions {},
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
