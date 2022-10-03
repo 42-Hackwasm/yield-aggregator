@@ -4,6 +4,7 @@ use cosmwasm_std::{from_slice, Addr, DepsMut, Env, MessageInfo, Response, SubMsg
 
 use cw20::Cw20ReceiveMsg;
 use cw_denom::Asset;
+use cw_utils::PaymentError;
 
 use crate::error::ContractError;
 use crate::msg::ReceiveMsg;
@@ -11,7 +12,7 @@ use crate::state::{BORROWS, COLLATERAL};
 
 pub fn collaterize(deps: DepsMut, user: &Addr, coin: Asset) -> Result<Response, ContractError> {
     if coin.amount.is_zero() {
-        return Err(ContractError::NoFundsSend {});
+        return Err(ContractError::Payment(PaymentError::NoFunds {}));
     }
     let mut funds = COLLATERAL.may_load(deps.storage, user)?.unwrap_or_default();
 

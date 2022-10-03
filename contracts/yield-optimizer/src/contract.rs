@@ -3,27 +3,19 @@
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
     to_binary, BankMsg, Binary, Coin, Deps, DepsMut, Env, IbcMsg, IbcTimeout, IbcTimeoutBlock,
-    MessageInfo, Response, StdError, StdResult, SubMsg, Uint128
+    MessageInfo, Response, StdError, StdResult, SubMsg, Uint128,
 };
 
 use crate::coin_helpers::convert_coins_vec_to_string;
-// ERRORS & MESSAGES
 use crate::error::ContractError;
 use crate::msg::{ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg};
-
-// CUSTOM CRATES
 use crate::queries;
-// execute
+use crate::state::{Config, Funds, Vault, CONFIG, FUNDS, VAULTS, VAULTS_COUNTER};
 
-// STATE
-use crate::state::{Config, CONFIG, FUNDS, Funds, Vault, VAULTS, VAULTS_COUNTER};
-
-// CW2
 use cw2::set_contract_version;
 const CONTRACT_NAME: &str = "crates.io:yield-aggregator";
 const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
 
-// LOGIC
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn instantiate(
     deps: DepsMut,
@@ -32,8 +24,6 @@ pub fn instantiate(
     msg: InstantiateMsg,
 ) -> Result<Response, ContractError> {
     set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
-
-    // deps.api.addr_validate(&msg.contract_admin)?;
 
     // admin if set, if not, the sender = contract admin
     let admin = deps
@@ -64,9 +54,6 @@ pub fn execute(
     match msg {
         ExecuteMsg::AddFunds {} => {
             let address = info.sender.to_string();
-            // let users_funds = FUNDS.may_load(deps.storage, address.clone())?;
-
-            // check if info.funds.clone() is empty
             if info.funds.clone().is_empty() {
                 return Err(ContractError::NoFundsSend {});
             }
@@ -77,6 +64,7 @@ pub fn execute(
                 .unwrap_or_else(|| Funds { funds: vec![] });
 
             // loop through funds.funds & add coins if they are the same denom
+            // TODO: optimize
             for coin in info.funds.clone() {
                 let mut found = false;
                 for i in 0..funds.funds.len() {
@@ -179,18 +167,16 @@ pub fn execute(
             });
 
             // TODO: we should instead somehow use ICA, need to find documentation on ICA
-
-            // transfer via an IBC channel
             let ibc_msg = IbcMsg::Transfer {
                 /// exisiting channel to send the tokens over
                 channel_id: channel_id.clone(),
                 /// address on the remote chain to receive these tokens
                 to_address: recipient_contract_address,
-                /// packet data only supports one coin
-                /// https://github.com/cosmos/cosmos-sdk/blob/v0.40.0/proto/ibc/applications/transfer/v1/transfer.proto#L11-L20
+                // packet data only supports one coin
+                // https://github.com/cosmos/cosmos-sdk/blob/v0.40.0/proto/ibc/applications/transfer/v1/transfer.proto#L11-L20
                 amount: Coin {
                     denom: denom.clone(),
-                    amount: amount,
+                    amount,
                 },
                 /// when packet times out, measured on remote chain
                 timeout: ibc_timeout_block.clone(),
@@ -212,9 +198,9 @@ pub fn execute(
                     .add_submessage(ibc_submsg)
                     .add_submessage(ibc_submsg_2), // this way we can get the replies later & ensure it was sucessful. Do we need that though for main hub?
             )
-        },
+        }
         ExecuteMsg::CreateVault { vault } => execute_create_vault(deps, env, info, vault),
-        ExecuteMsg::DisableVault { vault_id } => execute_disable_vault(deps, env, info, vault_id)
+        ExecuteMsg::DisableVault { vault_id } => execute_disable_vault(deps, env, info, vault_id),
     }
 }
 
@@ -224,10 +210,12 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
         QueryMsg::GetConfig {} => to_binary(&queries::query_config(deps)?),
 
         QueryMsg::GetFunds { address } => to_binary(&queries::get_funds(deps, address)?),
-        
+
         QueryMsg::GetVaults {} => to_binary(&queries::get_vaults(deps)?),
 
-        QueryMsg::GetUserPositions { address } => to_binary(&queries::get_positions(deps, address)?),
+        QueryMsg::GetUserPositions { address } => {
+            to_binary(&queries::get_positions(deps, address)?)
+        }
     }
 }
 
@@ -258,13 +246,14 @@ fn execute_create_vault(
     deps: DepsMut,
     _env: Env,
     info: MessageInfo,
-    vault: Vault
+    vault: Vault,
 ) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
     if info.sender.to_string() != config.admin.to_string() {
-        Err(ContractError::Unauthorized {  })
+        Err(ContractError::Unauthorized {})
     } else {
-        let id: Uint128 = VAULTS_COUNTER.may_load(deps.storage)?.unwrap_or_default() + Uint128::from(1u128);
+        let id: Uint128 =
+            VAULTS_COUNTER.may_load(deps.storage)?.unwrap_or_default() + Uint128::from(1u128);
         VAULTS_COUNTER.save(deps.storage, &id)?;
         VAULTS.save(deps.storage, id.u128(), &vault).unwrap();
         Ok(Response::new())
@@ -275,19 +264,19 @@ fn execute_disable_vault(
     deps: DepsMut,
     _env: Env,
     info: MessageInfo,
-    vault_id: u128
+    vault_id: u128,
 ) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
     if info.sender != config.admin.to_string() {
-        Err(ContractError::Unauthorized {  })
+        Err(ContractError::Unauthorized {})
     } else {
         match VAULTS.may_load(deps.storage, vault_id)? {
             Some(mut vault) => {
                 vault.is_active = false;
                 VAULTS.save(deps.storage, vault_id, &vault)?;
                 Ok(Response::new())
-            },
-            None => Err(ContractError::VaultDoesntExist {})
+            }
+            None => Err(ContractError::VaultDoesntExist {}),
         }
     }
 }
