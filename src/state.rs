@@ -42,4 +42,6 @@ pub struct Position {
     pub pool_share: Decimal,
     pub pool_token1_balance: Uint128,
     pub pool_token2_balance: Uint128,
+    pub token1_denom: String,
+    pub token2_denom: String,
 }

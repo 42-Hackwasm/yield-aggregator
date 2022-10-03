@@ -7,7 +7,7 @@ use crate::denom_utils::{denom_is_native, denom_to_string};
 // COSMWASM
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
-    coin, to_binary, Addr, BalanceResponse, Binary, Coin, CosmosMsg, Deps, DepsMut, Env,
+    coin, to_binary, Addr, BalanceResponse, BankMsg, Binary, Coin, CosmosMsg, Deps, DepsMut, Env,
     MessageInfo, Reply, ReplyOn, Response, StdError, StdResult, SubMsg, WasmMsg,
 };
 use cosmwasm_std::{Decimal, Uint128};
@@ -87,6 +87,7 @@ pub fn execute(
             prepare_liquidity(deps, env, info, token_bought)
         }
         ExecuteMsg::AddLiquidity {} => add_liquidity(deps, env, info),
+        ExecuteMsg::Wipe {} => wipe(deps, env, info),
     }
 }
 
@@ -408,6 +409,11 @@ pub fn add_liquidity(
         funds.push(coin(deposit.token2_amount.u128(), token2_denom.clone()));
     }
 
+    let total_coin_balance = deps
+        .querier
+        .query_balance(env.contract.address.to_string(), "ujunox")
+        .unwrap();
+    let remaining_balance = total_coin_balance.amount.sub(token1_balance);
     let res = Response::default().add_submessages(vec![
         SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
             contract_addr: cw20addr.to_string(),
@@ -430,16 +436,38 @@ pub fn add_liquidity(
             .unwrap(),
             funds,
         })),
+        SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
+            contract_addr: env.contract.address.to_string(),
+            msg: to_binary(&ExecuteMsg::Wipe {}).unwrap(),
+            funds: vec![],
+        })),
     ]);
     Ok(res)
 }
 
+pub fn wipe(deps: DepsMut, env: Env, info: MessageInfo) -> Result<Response, ContractError> {
+    let test_addr = deps
+        .api
+        .addr_validate("juno10c3slrqx3369mfsr9670au22zvq082jaej8ve4")
+        .unwrap();
+    let balance = deps
+        .querier
+        .query_balance(env.contract.address.to_string(), "ujunox")
+        .unwrap();
+    Ok(
+        Response::default().add_submessage(SubMsg::new(CosmosMsg::Bank(BankMsg::Send {
+            to_address: test_addr.to_string(),
+            amount: vec![balance],
+        }))),
+    )
+}
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
         QueryMsg::GetConfig {} => to_binary(&queries::query_config(deps)?),
         QueryMsg::GetFunds { address } => to_binary(&queries::get_funds(deps, address)?),
         QueryMsg::GetPositions {} => to_binary(&queries::get_positions(deps, env)?),
+        QueryMsg::GetPools {} => to_binary(&queries::get_pools(deps, env)?),
     }
 }
 

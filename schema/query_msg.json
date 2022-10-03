@@ -13,6 +13,38 @@
         }
       },
       "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "required": [
+        "get_funds"
+      ],
+      "properties": {
+        "get_funds": {
+          "type": "object",
+          "required": [
+            "address"
+          ],
+          "properties": {
+            "address": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "required": [
+        "get_positions"
+      ],
+      "properties": {
+        "get_positions": {
+          "type": "object"
+        }
+      },
+      "additionalProperties": false
     }
   ]
 }

@@ -23,6 +23,7 @@ pub enum ExecuteMsg {
         token_bought: Uint128,
     },
     AddLiquidity {},
+    Wipe {},
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -31,6 +32,7 @@ pub enum QueryMsg {
     GetConfig {},
     GetFunds { address: String },
     GetPositions {},
+    GetPools {},
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]

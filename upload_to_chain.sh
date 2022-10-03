@@ -21,7 +21,10 @@ ADDR_YIELD=$(junod query tx $YIELD_TX_INIT --output json | jq -r '.logs[0].event
 # DEPOSIT
 sleep 1
 echo "Zapping with Juno..."
-RESULT=$(junod tx wasm execute $ADDR_YIELD '{"deposit":{"pool_addr":"juno1j4ezvp80mnn75hlngak35n6wwzemxqjxdncdxc5n9dfw6s0q080qyhh9zl", "token1_amount":"100000", "token2_amount":"0"}}' -y --from testwasm -b block --gas-adjustment 1.1 --gas 1550000 --gas-prices=0.025ujunox --keyring-backend test --amount 100000ujunox) && echo $RESULT
+# RESULT=$(junod tx wasm execute $ADDR_YIELD '{"deposit":{"pool_addr":"juno1j4ezvp80mnn75hlngak35n6wwzemxqjxdncdxc5n9dfw6s0q080qyhh9zl", "token1_amount":"100000", "token2_amount":"0"}}' -y --from testwasm -b block --gas-adjustment 1.1 --gas 1550000 --gas-prices=0.025ujunox --keyring-backend test --amount 100000ujunox) && echo $RESULT
+sleep 3
+echo "Querying Pools..."
+POOLS=$(junod query wasm cs smart $ADDR_YIELD '{"get_pools":{}}' --output json) && echo $POOLS
 sleep 3
 echo "Querying Positions..."
 POSITIONS=$(junod query wasm cs smart $ADDR_YIELD '{"get_positions":{}}' --output json) && echo $POSITIONS
