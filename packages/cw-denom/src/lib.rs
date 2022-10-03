@@ -55,6 +55,35 @@ pub enum CheckedDenom {
     Cw20(Addr),
 }
 
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, JsonSchema)]
+pub struct Asset {
+    pub denom: CheckedDenom,
+    pub amount: Uint128,
+}
+
+impl Asset {
+    pub fn new(denom: UncheckedDenom, amount: Uint128, deps: Deps) -> Result<Self, DenomError> {
+        Ok(Self {
+            denom: denom.into_checked(deps)?,
+            amount,
+        })
+    }
+
+    pub fn from_native_checked(c: Coin) -> Self {
+        Asset {
+            denom: CheckedDenom::Native(c.denom),
+            amount: c.amount,
+        }
+    }
+
+    pub fn new_cw20_checked(denom: Addr, amount: Uint128) -> Self {
+        Asset {
+            denom: CheckedDenom::Cw20(denom),
+            amount,
+        }
+    }
+}
+
 /// A denom that has not been checked to confirm it points to a valid
 /// asset.
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, JsonSchema)]
@@ -81,10 +110,11 @@ impl UncheckedDenom {
             Self::Native(denom) => validate_native_denom(denom),
             Self::Cw20(addr) => {
                 let addr = deps.api.addr_validate(&addr)?;
-                let _info: cw20::TokenInfoResponse = deps
-                    .querier
-                    .query_wasm_smart(addr.clone(), &cw20::Cw20QueryMsg::TokenInfo {})
-                    .map_err(|err| DenomError::InvalidCw20 { err })?;
+                //// we can be optimistic -- no need to query contract
+                // let _info: cw20::TokenInfoResponse = deps
+                //     .querier
+                //     .query_wasm_smart(addr.clone(), &cw20::Cw20QueryMsg::TokenInfo {})
+                //     .map_err(|err| DenomError::InvalidCw20 { err })?;
                 Ok(CheckedDenom::Cw20(addr))
             }
         }
