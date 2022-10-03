@@ -21,6 +21,3 @@ ADDR_YIELD=$(junod query tx $YIELD_TX_INIT --output json | jq -r '.logs[0].event
 # DEPOSIT
 sleep 8
 RESULT=$(junod tx wasm execute $ADDR_YIELD '{"deposit":{"pool_addr":"juno1j4ezvp80mnn75hlngak35n6wwzemxqjxdncdxc5n9dfw6s0q080qyhh9zl", "token1_amount":"10000", "token2_amount":"0"}}' -y --from testwasm -b block --gas-adjustment 1.1 --gas 1550000 --gas-prices=0.025ujunox --keyring-backend test --amount 10000ujunox) && echo $RESULT
-# ADD LIQUIDITY
-sleep 8
-RESULT=$(junod tx wasm execute $ADDR_YIELD '{"add_liquidity":{}}' -y --from testwasm -b block --gas-adjustment 1.1 --gas 1550000 --gas-prices=0.025ujunox --keyring-backend test) && echo $RESULT

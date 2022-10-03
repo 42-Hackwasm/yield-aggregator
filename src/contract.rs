@@ -36,7 +36,7 @@ use crate::wasmswap_msg::Token2ForToken1PriceResponse;
 use crate::wasmswap_msg::{ExecuteMsg as WasmSwapExecuteMsg, TokenSelect};
 
 const SWAP_REPLY_ID: u64 = 1u64;
-const QUERY_REPLY_ID: u64 = 2u64;
+const SWAP_FEE: u128 = 50u128; //0.05% Swap Fee
 
 // LOGIC
 #[cfg_attr(not(feature = "library"), entry_point)]
@@ -145,16 +145,20 @@ pub fn deposit(
     token1_amount: Uint128,
     token2_amount: Uint128,
 ) -> Result<Response, ContractError> {
+    //Query Pool Info
     let pool_info: InfoResponse = deps
         .querier
         .query_wasm_smart(pool_addr.clone(), &WasmSwapQueryMsg::Info {})?;
 
+    //Extract Denoms from Pool
     let token1_denom = &pool_info.token1_denom;
     let token2_denom = &pool_info.token2_denom;
 
+    // Define min amount for querying price when the user sends 0 of any token.
     let min_token1_for_price = max(token1_amount, Uint128::one());
     let min_token2_for_price = max(token2_amount, Uint128::one());
 
+    // Query Price of one token againts the other
     let token1_to_token2_price_response: Token1ForToken2PriceResponse =
         deps.querier.query_wasm_smart(
             pool_addr.clone(),
@@ -170,7 +174,7 @@ pub fn deposit(
             },
         )?;
 
-    let mut attrs: Vec<(&str, String)> = vec![];
+    // Calculate Price
     let token1_price = Decimal::from_ratio(
         token1_to_token2_price_response.token2_amount.clone(),
         min_token1_for_price.clone(),
@@ -182,13 +186,12 @@ pub fn deposit(
 
     let token1_value: Uint128 = token1_amount.mul(token1_price.clone());
     let token2_value = token2_amount.mul(token2_price.clone());
-
     let total_token1_value = token1_amount + token2_value;
     let total_token2_value = token2_amount + token1_value;
 
+    // Define Amount of Tokens to Swap in order to have it balanced 50/50 to join the Liquidity Pool.
     let mut token1_amount_to_swap = Uint128::zero();
     let mut token2_amount_to_swap = Uint128::zero();
-
     if token1_value > token2_amount {
         if token2_amount.is_zero() {
             token1_amount_to_swap = Uint128::one().mul(Decimal::from_ratio(token1_amount, 2u128));
@@ -210,11 +213,8 @@ pub fn deposit(
     };
 
     let mut res = Response::new();
-    res = res.add_attributes(vec![
-        ("token1_amount_to_swap", token1_amount_to_swap.to_string()),
-        ("token2_amount_to_swap", token2_amount_to_swap.to_string()),
-    ]);
 
+    // Create Deposit struct to track stuff between calls, can probably be removed
     let token_amount_to_swap: Uint128;
     let mut deposit = Deposit {
         token1_amount,
@@ -224,34 +224,34 @@ pub fn deposit(
         swapped_token: String::new(),
         pool_addr: pool_addr.clone(),
     };
-    let swap_fee = 50u128;
     if token1_amount_to_swap + token2_amount_to_swap > Uint128::zero() {
         let token_to_swap = if token1_amount_to_swap > token2_amount_to_swap {
             token_amount_to_swap = token1_amount_to_swap;
             deposit.token1_amount = token1_amount.sub(token_amount_to_swap);
             deposit.token1_amount = deposit.token1_amount
-                - Uint128::one().mul(Decimal::from_ratio(deposit.token1_amount, swap_fee));
+                - Uint128::one().mul(Decimal::from_ratio(deposit.token1_amount, SWAP_FEE));
             deposit.swapped_token = denom_to_string(token1_denom);
             (TokenSelect::Token1, token1_denom)
         } else {
             token_amount_to_swap = token2_amount_to_swap;
             deposit.token2_amount = token2_amount.sub(token_amount_to_swap);
             deposit.token2_amount = deposit.token2_amount
-                - Uint128::one().mul(Decimal::from_ratio(deposit.token2_amount, swap_fee));
+                - Uint128::one().mul(Decimal::from_ratio(deposit.token2_amount, SWAP_FEE));
             deposit.swapped_token = denom_to_string(&deposit.token2_denom);
             (TokenSelect::Token2, token2_denom)
         };
         DEPOSIT.save(deps.storage, &deposit).unwrap();
         /*
         &WasmSwapExecuteMsg::SwapAndSendTo {
-                                input_token: token_to_swap.0,
-                                input_amount: token_amount_to_swap.clone(),
-                                recipient: info.sender.to_string(),
-                                min_token: Uint128::zero(),
-                                expiration: None,
-                            }
-                 */
+            input_token: token_to_swap.0,
+            input_amount: token_amount_to_swap.clone(),
+            recipient: info.sender.to_string(),
+            min_token: Uint128::zero(),
+            expiration: None,
+        }
+        */
 
+        // Create Swap Msg
         if denom_is_native(token_to_swap.1) {
             let denom_str = denom_to_string(&token_to_swap.1);
             res = res.add_submessages(vec![SubMsg {
@@ -271,6 +271,8 @@ pub fn deposit(
                 reply_on: ReplyOn::Always,
             }]);
         } else {
+            //TODO: CW20 Deposit support
+            /*
             res = res.add_submessages(vec![
                 SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
                     contract_addr: denom_to_string(&token_to_swap.1),
@@ -302,10 +304,11 @@ pub fn deposit(
                     reply_on: ReplyOn::Always,
                 },
             ]);
-        };
+            */
+        }
     } else {
         //TODO: Call Add Liquidity
-    };
+    }
     Ok(res)
 }
 
@@ -359,20 +362,25 @@ pub fn prepare_liquidity(
         )
         .unwrap();
     // Deduct Swap Fee
-    let swap_fee = 50u128;
     let token1_amount_to_add = deposit.token1_amount
-        - Uint128::one().mul(Decimal::from_ratio(deposit.token1_amount, swap_fee));
+        - Uint128::one().mul(Decimal::from_ratio(deposit.token1_amount, SWAP_FEE));
 
-    let res = Response::new().add_attributes(vec![
-        ("cw20addr", cw20addr.to_string()),
-        ("token1_amount", token1_amount_to_add.to_string()),
-        ("max_token2", deposit.token2_amount.to_string()),
-        ("token1_balance", token1_balance.amount.to_string()),
-        (
-            "token2_balance",
-            token2_balance_response.amount.amount.to_string(),
-        ),
-    ]);
+    let res = Response::new()
+        .add_attributes(vec![
+            ("cw20addr", cw20addr.to_string()),
+            ("token1_amount", token1_amount_to_add.to_string()),
+            ("max_token2", deposit.token2_amount.to_string()),
+            ("token1_balance", token1_balance.amount.to_string()),
+            (
+                "token2_balance",
+                token2_balance_response.amount.amount.to_string(),
+            ),
+        ])
+        .add_submessage(SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
+            contract_addr: env.contract.address.to_string(),
+            msg: to_binary(&ExecuteMsg::AddLiquidity {}).unwrap(),
+            funds: vec![],
+        })));
     Ok(res)
 }
 
@@ -400,7 +408,6 @@ pub fn add_liquidity(
         funds.push(coin(deposit.token2_amount.u128(), token2_denom.clone()));
     }
 
-    // let token1_amount = Uint128::one().mul(Decimal::from_ratio(token1_balance, 2u128));
     let res = Response::default().add_submessages(vec![
         SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
             contract_addr: cw20addr.to_string(),
